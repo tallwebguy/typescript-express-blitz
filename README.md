@@ -11,6 +11,8 @@ Can either run in the debugger, or by using `npm run-script run` to compile (com
 
 Code will build into a /build directory and Node will be invoked in there.
 
+Doing `DEBUG=true node build/app.js` will show the debug output from the class loader when the application starts.
+
 Hit http://localhost:3000/ to see it running.
 
 ## Tested on

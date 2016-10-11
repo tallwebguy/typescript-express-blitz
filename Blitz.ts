@@ -3,6 +3,7 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import * as events from "events";
 
 import * as express from "express";
 import * as Promise from "bluebird";
@@ -25,7 +26,7 @@ This is a rework of the G2G/Echo Blitz class loader. It works with the conventio
 file to create singletons of all of the controller and model files within the project.
 Everything is added into the Express instance which is passed into configure
 */
-export class Blitz {
+export class Blitz extends events.EventEmitter {
 
 	private _localDir:string = undefined;
 	private _modulePath:string = undefined;
@@ -38,6 +39,7 @@ export class Blitz {
 	You can pass in a different directory if you don't want it to start searching with __dirname
 	*/
 	constructor(dir?:string) {
+		super();
 		this._localDir = dir || __dirname;
 		this._modulePath = path.join(this._localDir, this._modulesDirectory);
 	}
@@ -55,9 +57,11 @@ export class Blitz {
 	//loop through the modules/controller directory and create instances
 	//of controllers and add them in to the application passed in..
 	public loadControllers(app:express.Express):Promise<any> {
+		this.emit("LOG", "Loading Controllers")
 		return this.loadItems(app, "controllers", "controller"); //this should return a promise..
 	}
 	private loadModels(app:express.Express):Promise<any> {
+		this.emit("LOG", "Loading Models");
 		return this.loadItems(app, "models", "model");
 	}
 
@@ -141,6 +145,7 @@ export class Blitz {
 			//Here we should now have a list of the names of things and the paths to load them from..
 			.map((loadableItem:ILoadableItem) => {
 				let newObj = require(loadableItem.path);
+				this.emit("LOG", "Creating instance of "+loadableItem.name);
 				let newInstance = new newObj[loadableItem.name](app); //TS does this extra wrapper around the required object
 				items[loadableItem.name] = newInstance;
 				loadableItem.loaded = true;
@@ -157,6 +162,7 @@ export class Blitz {
 		- look for index.js file within those folders
 		- require() and execute file
 		*/
+		this.emit("LOG", "Loading modules");
 		let indexFiles:any = []
 		return this._readDir(this._modulePath)
 			.map((mod) => { //this is a module inside the /modules directory
@@ -173,6 +179,7 @@ export class Blitz {
 			})
 			//include and execute the index file
 			.map((indexFile:ILoadableModule):ILoadableModule => {
+				this.emit("LOG", "Loading module : "+indexFile.path);
 				indexFile.index = require(indexFile.path);
 				indexFile.index(app);
 				indexFile.loaded = true;

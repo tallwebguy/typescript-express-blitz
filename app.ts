@@ -23,9 +23,14 @@ Invoke the Blitz class loader, this will walk the modules directory
 and look for suitable Controllers and Models to load in
 */
 let b:Blitz = new Blitz();
-b.configure(app);
+if (process.env['DEBUG']) {
+	b.on("LOG", (msg) => { console.log(msg) });
+}
+//configure returns a promise which will resolve when everything has finished loading
+b.configure(app).then(() => {
+	//Application starts up in the same way
+	app.listen(3000, () => {
+		console.log("Server Running!");
+	})
+});
 
-//Application starts up in the same way
-app.listen(3000, () => {
-	console.log("Server Running!");
-})
